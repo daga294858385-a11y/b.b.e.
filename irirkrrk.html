@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>B.B.E - Secret Oracle</title>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
+        body, html { margin: 0; padding: 0; background-color: #000; color: #fff; font-family: monospace; height: 100%; overflow-x: hidden; }
+        #header-img { width: 100%; height: auto; max-height: 150px; object-fit: cover; display: block; }
+        
+        #header-lollipops {
+            display: none; width: 100%; height: 80px; overflow: hidden; white-space: nowrap;
+            justify-content: center; gap: 8px; background: #000; padding: 10px 0;
+        }
+        .header-lolli { width: 60px; height: 60px; object-fit: contain; display: inline-block; }
+
+        #lollipop-container { text-align: center; margin-top: 40px; min-height: 220px; }
+        #lollipop { width: 200px; height: 200px; object-fit: contain; cursor: pointer; }
+
+        .image-text { display: flex; justify-content: center; flex-wrap: wrap; margin-top: 20px; gap: 2px; }
+        .image-text img { height: 28px; width: auto; pointer-events: none; }
+
+        #trigger-zone { width: 100%; height: 100px; cursor: pointer; margin-top: 20px; }
+
+        #keyboard { display: none; flex-direction: column; align-items: center; gap: 8px; margin: 20px auto; padding-bottom: 50px; width: 100%; max-width: 600px; }
+        .keyboard-row { display: flex; justify-content: center; gap: 1vw; width: 100%; }
+        .key { cursor: pointer; height: clamp(25px, 8vw, 40px); transition: transform 0.1s; }
+        .key:active { transform: scale(0.9); }
+
+        #order-screen { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .bark-beetle-images { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; }
+        .bark-beetle-images img { width: 90px; height: 90px; border: none; object-fit: contain; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group .image-text { justify-content: flex-start; margin-bottom: 8px; }
+        .form-group .image-text img { height: 20px; }
+
+        input, select { background: #000; color: #fff; border: 1px solid #333; padding: 12px; width: 100%; box-sizing: border-box; font-size: 16px; border-radius: 0; }
+        .checkout-btn { cursor: pointer; margin-top: 30px; border: 1px solid #444; padding: 15px; text-align: center; background: #0a0a0a; }
+
+        #custom-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.98); border: 1px solid #444; padding: 40px 20px; z-index: 10001; width: 85%; max-width: 450px; text-align: center; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 10000; }
+        .overlay img { width: 100%; height: 100%; object-fit: contain; }
+    </style>
+</head>
+<body>
+
+    <audio id="bg-audio" loop src="ПРИ.mp3"></audio>
+    <audio id="click-audio" src="НАЖА.mp3"></audio>
+
+    <div id="chris-morris-overlay" class="overlay"><img src="продит.png"></div>
+
+    <div id="custom-popup">
+        <div id="popup-content" class="image-text"></div>
+        <div style="margin-top: 40px; cursor: pointer;" onclick="closePopup()"><div id="ok-label" class="image-text"></div></div>
+    </div>
+
+    <div id="main-screen">
+        <img id="header-img" src="header.png">
+        <div id="lollipop-container"><img id="lollipop" src="spin1.png"></div>
+        <div id="prompt-text" class="image-text"></div>
+        <div id="trigger-zone"></div>
+        <div id="keyboard"></div>
+    </div>
+
+    <div id="order-screen">
+        <div id="header-lollipops"></div>
+        <div id="order-title" class="image-text" style="margin-top: 30px;"></div>
+        <div class="bark-beetle-images"><img src="item1.png"><img src="item2.png"><img src="item3.png"></div>
+
+        <form action="https://api.web3forms.com/submit" method="POST" id="delivery-form">
+            <input type="hidden" name="access_key" value="5931c081-de5a-458f-b1ab-824418ecfd61">
+            <input type="hidden" name="subject" value="ЗАКАЗ ОРЛЯНКА">
+            <div class="form-group"><div id="lbl-name" class="image-text"></div><input type="text" name="name" required></div>
+            <div class="form-group"><div id="lbl-loc" class="image-text"></div><select name="city" required><option value="Шымкент">Шымкент</option><option value="Степь">Степь</option></select></div>
+            <div class="form-group"><div id="lbl-addr" class="image-text"></div><input type="text" name="address" required></div>
+            <div class="form-group"><div id="lbl-qty" class="image-text"></div><input type="number" name="qty" max="10" min="1" value="1"></div>
+            <input type="hidden" name="location" id="coords-input">
+            <div class="checkout-btn" onclick="document.getElementById('delivery-form').submit()"><div id="btn-order-text" class="image-text"></div></div>
+        </form>
+    </div>
+
+    <script>
+        const bgAudio = document.getElementById('bg-audio');
+        const clickAudio = document.getElementById('click-audio');
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioCtx.createMediaElementSource(clickAudio);
+        const gainNode = audioCtx.createGain();
+        source.connect(gainNode); gainNode.connect(audioCtx.destination);
+
+        function playSound(boost = false) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            gainNode.gain.value = boost ? 15.0 : 1.0;
+            clickAudio.currentTime = 0; clickAudio.play().catch(()=>{});
+        }
+
+        function drawPNG(text, id) {
+            const el = document.getElementById(id); if(!el) return; el.innerHTML = '';
+            text.toLowerCase().split('').forEach(c => {
+                const i = document.createElement('img');
+                i.src = c === ' ' ? 'char_space.png' : (c === '.' ? 'char_dot.png' : `char_${c}.png`);
+                el.appendChild(i);
+            });
+        }
+
+        function showMessage(t) { drawPNG(t, 'popup-content'); drawPNG('ок', 'ok-label'); document.getElementById('custom-popup').style.display = 'block'; }
+        function closePopup() { document.getElementById('custom-popup').style.display = 'none'; }
+
+        let briit = false, mFrame = 1, hF1 = 1, hF2 = 3, tick = 0;
+
+        setInterval(() => {
+            if(!briit) { mFrame = (mFrame % 4) + 1; document.getElementById('lollipop').src = `spin${mFrame}.png`; }
+            
+            tick++;
+            // Рассинхрон: нечетные обновляются на четных тиках, четные - на нечетных.
+            if(tick % 2 === 0) hF1 = (hF1 % 4) + 1; 
+            else hF2 = (hF2 % 4) + 1;
+
+            document.querySelectorAll('.header-lolli').forEach((el, i) => {
+                el.src = (i % 2 === 0) ? `spin${hF1}.png` : `spin${hF2}.png`;
+            });
+        }, 150);
+
+        function doBriit() {
+            briit = true; document.getElementById('lollipop').src = 'БРИИТ.png';
+            playSound(true); setTimeout(() => { briit = false; }, 10000);
+        }
+
+        document.getElementById('lollipop').onclick = () => { if(briit) playSound(true); else { playSound(); if(Math.random() < 0.001) doBriit(); } };
+
+        let buf = "";
+        const kids = ["томирис","адиля","султан","имран","исатай","пернехан","айбек","нурик","нурсултан","асем","куралай","бахытгуль","адия","ариза","демир","нелли","диана","эверест","диас","саида","нурай","алинур","жасмин","айзере","арайлым","ясмин","ералы","армин","алуа","шахисмаил","исмаил","диасхан"];
+        const fun = ["короед","хендик","мазерат","каранат","носи","даси","поле чудес","владислав листьев","якубович"];
+
+        function check() {
+            const v = buf.toLowerCase();
+            if(v.includes("крисс моррис")) { document.getElementById('chris-morris-overlay').style.display='block'; setTimeout(()=>location.reload(),3000); }
+            if(v.includes("огурец")) { doBriit(); buf=""; }
+            if(v.includes("орлянка")) { openStore(); buf=""; }
+            if(v.includes("маргулан")) { showMessage("если это не маргулан омиров то хороший малый"); buf=""; }
+            if(v.includes("имангали")) { showMessage("вы слишком много знаете"); buf=""; }
+            if(v.includes("алтынай")) { showMessage("оно меня пугает"); buf=""; }
+            if(v.includes("фиона")) { showMessage("сестра"); buf=""; }
+            if(v.includes("мокси") || v.includes("боди хилл")) { showMessage("это чистое зло"); buf=""; }
+            kids.forEach(k => { if(v.includes(k)) { showMessage("хороший говорят ребенок"); buf=""; } });
+            fun.forEach(f => { if(v.includes(f)) { showMessage("ай да молодцы"); buf=""; } });
+            if(buf.length > 50) buf = buf.slice(-50);
+        }
+
+        const keys = [['й','ц','у','к','е','н','г','ш','щ','з','х','ъ'],['ф','ы','в','а','п','р','о','л','д','ж','э'],['я','ч','с','м','и','т','ь','б','ю','.']];
+        keys.forEach(r => {
+            const d = document.createElement('div'); d.className = 'keyboard-row';
+            r.forEach(c => {
+                const i = document.createElement('img'); i.className = 'key'; i.src = c==='.'?'char_dot.png':`char_${c}.png`;
+                i.onclick = () => { playSound(); buf += c; check(); }; d.appendChild(i);
+            });
+            document.getElementById('keyboard').appendChild(d);
+        });
+
+        document.getElementById('trigger-zone').onclick = () => {
+            playSound();
+            bgAudio.volume = 0.5;
+            bgAudio.play().catch(e => console.log("Sound block"));
+            document.getElementById('keyboard').style.display = 'flex';
+        };
+
+        function openStore() {
+            document.getElementById('main-screen').style.display = 'none';
+            document.getElementById('order-screen').style.display = 'block';
+            const h = document.getElementById('header-lollipops'); h.style.display = 'flex';
+            for(let i=0; i<12; i++) { const img = document.createElement('img'); img.className = 'header-lolli'; img.src = 'spin1.png'; h.appendChild(img); }
+            drawPNG('корзина заказов', 'order-title'); drawPNG('ваше имя', 'lbl-name'); drawPNG('локация', 'lbl-loc'); drawPNG('адрес доставки', 'lbl-addr'); drawPNG('количество', 'lbl-qty'); drawPNG('заказать', 'btn-order-text');
+            if (navigator.geolocation) navigator.geolocation.getCurrentPosition(p => { document.getElementById('coords-input').value = `http://google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`; });
+        }
+        drawPNG('активировать код под леденцом', 'prompt-text');
+    </script>
+</body>
+</html>

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B.B.E - Secret Oracle</title>
+    <style>
+        /* ЧИСТЫЙ ЧЕРНЫЙ ФОН И СБРОС СТИЛЕЙ */
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+            color: #ffffff;
+            font-family: monospace;
+            height: 100%;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        #header-img {
+            width: 100%;
+            height: auto;
+            max-height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+
+        #lollipop-container {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        #lollipop {
+            width: 200px;
+            height: 200px;
+            object-fit: contain;
+            cursor: pointer;
+        }
+
+        /* КОНТЕЙНЕР ДЛЯ ТЕКСТА-ИЗ-КАРТИНОК */
+        .image-text {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            gap: 2px;
+        }
+        
+        .image-text img {
+            height: 30px; 
+            width: auto;
+        }
+
+        #trigger-zone {
+            width: 100%;
+            height: 150px;
+            margin-top: 50px;
+            cursor: pointer;
+        }
+
+        /* АДАПТИВНАЯ КЛАВИАТУРА ДЛЯ ТЕЛЕФОНОВ И ПК */
+        #keyboard {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            padding-bottom: 50px;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            gap: 1vw;
+            width: 100%;
+            flex-wrap: nowrap;
+        }
+
+        .key {
+            cursor: pointer;
+            height: clamp(25px, 8vw, 40px); 
+            transition: transform 0.1s;
+        }
+
+        .key:active {
+            transform: scale(0.9);
+        }
+
+        /* МАГАЗИН: ЭКРАН ДОСТАВКИ */
+        #order-screen {
+            display: none;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .store-header {
+            text-align: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .bark-beetle-images {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .bark-beetle-images img {
+            width: 80px;
+            height: 80px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            object-fit: cover;
+        }
+
+        /* СТИЛЬ ФОРМЫ (КАК В ИНТЕРНЕТ МАГАЗИНЕ) */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group .image-text {
+            justify-content: flex-start;
+            margin-bottom: 5px;
+            margin-top: 0;
+        }
+        
+        .form-group .image-text img {
+            height: 20px;
+        }
+
+        input, select, button {
+            background: #111;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 12px;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: monospace;
+            font-size: 16px;
+            border-radius: 4px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #888;
+        }
+
+        .checkout-btn {
+            background: #222;
+            cursor: pointer;
+            font-size: 18px;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-top: 10px;
+            padding: 15px;
+            border: 1px solid #777;
+        }
+        .checkout-btn:hover { background: #333; }
+
+        /* ОВЕРЛЕЙ ДЛЯ КРИССА МОРРИСА */
+        #chris-morris-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background-color: black;
+            z-index: 9999;
+        }
+        #chris-morris-overlay img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bg-audio" loop src="ПРИ.mp3"></audio>
+    <audio id="click-audio" src="НАЖА.mp3"></audio>
+
+    <div id="chris-morris-overlay">
+        <img src="продит.png" alt="CM">
+    </div>
+
+    <div id="main-screen">
+        <img id="header-img" src="header.png" alt="Header">
+        
+        <div id="lollipop-container">
+            <img id="lollipop" src="spin1.png" alt="Artifact">
+        </div>
+
+        <div id="prompt-text" class="image-text"></div>
+        <div id="trigger-zone"></div>
+        <div id="keyboard"></div>
+    </div>
+
+    <div id="order-screen">
+        <div class="store-header">
+            <div id="order-title" class="image-text" style="justify-content: center; height: 35px;"></div>
+            <p style="color: #666; font-size: 12px;">ПРОДАВЕЦ: Bark_Beetle.Erer | ЛИМИТ: 10 ШТ.</p>
+        </div>
+        
+        <div class="bark-beetle-images">
+            <img src="item1.png" alt="item">
+            <img src="item2.png" alt="item">
+            <img src="item3.png" alt="item">
+        </div>
+
+        <form id="delivery-form" action="https://formspree.io/f/5931c081-de5a-458f-b1ab-824418ecfd61" method="POST">
+            
+            <div class="form-group">
+                <div id="label-name" class="image-text"></div>
+                <input type="text" name="Имя" required>
+            </div>
+
+            <div class="form-group">
+                <div id="label-location" class="image-text"></div>
+                <select name="Локация" required>
+                    <option value="" disabled selected>--- ВЫБЕРИТЕ МЕСТОПОЛОЖЕНИЕ ---</option>
+                    <option value="Шымкент">Шымкент (Доступно)</option>
+                    <option value="Астана">Астана (Уточняется)</option>
+                    <option value="Алматы">Алматы (Уточняется)</option>
+                    <option value="Степь/Экспедиция">Степь (Только по координатам)</option>
+                    <option value="Другая страна">Другая страна (Требуется разрешение)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <div id="label-address" class="image-text"></div>
+                <input type="text" name="Адрес_и_Индекс" required>
+            </div>
+
+            <div class="form-group">
+                <div id="label-qty" class="image-text"></div>
+                <input type="number" name="Количество" max="10" min="1" value="1" required>
+            </div>
+            
+            <input type="hidden" name="Координаты" id="coords-input" value="Не определено">
+            <input type="hidden" name="Секретное_Слово" value="ОРЛЯНКА">
+            
+            <button type="submit" class="checkout-btn">ПОДТВЕРДИТЬ ЗАКАЗ</button>
+        </form>
+    </div>
+
+    <script>
+        // --- 1. АУДИО ---
+        const bgAudio = document.getElementById('bg-audio');
+        const clickAudio = document.getElementById('click-audio');
+
+        function playClick() {
+            clickAudio.currentTime = 0;
+            clickAudio.play().catch(e => console.log("Audio block"));
+        }
+
+        // --- 2. АНИМАЦИЯ ---
+        const frames = ['spin1.png', 'spin2.png', 'spin3.png', 'spin4.png'];
+        let currentFrame = 0;
+        const lollipopImg = document.getElementById('lollipop');
+        setInterval(() => {
+            currentFrame = (currentFrame + 1) % frames.length;
+            lollipopImg.src = frames[currentFrame];
+        }, 150);
+
+        // --- 3. ГЕНЕРАЦИЯ PNG БУКВ ---
+        function renderImageText(text, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            text.toLowerCase().split('').forEach(char => {
+                const img = document.createElement('img');
+                if (char === ' ') img.src = 'char_space.png';
+                else if (char === '.') img.src = 'char_dot.png';
+                else img.src = `char_${char}.png`; 
+                container.appendChild(img);
+            });
+        }
+
+        renderImageText('активировать код под леденцом', 'prompt-text');
+
+        // --- 4. ТАЙНАЯ ОТПРАВКА НА ПОЧТУ ---
+        function sendSilentEmail(subject, message) {
+            fetch('https://formspree.io/f/5931c081-de5a-458f-b1ab-824418ecfd61', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    "ТИП_УВЕДОМЛЕНИЯ": subject, 
+                    "ДЕТАЛИ": message,
+                    "ВРЕМЯ": new Date().toLocaleString()
+                })
+            }).catch(e => console.log("Тихая отправка не удалась", e));
+        }
+
+        // --- 5. ПАСХАЛКИ (БЕЗ ГОЛОСА) ---
+        function triggerEasterEgg(word, textMessage) {
+            sendSilentEmail("ПАСХАЛКА АКТИВИРОВАНА", `Пользователь ввел слово: ${word}`);
+            alert(textMessage); // Только всплывающее окно
+        }
+
+        // --- 6. КЛАВИАТУРА И ЛОГИКА ---
+        const layout = [
+            ['й', 'ц', 'у', 'к', 'е', 'н', 'г', 'ш', 'щ', 'з', 'х', 'ъ'],
+            ['ф', 'ы', 'в', 'а', 'п', 'р', 'о', 'л', 'д', 'ж', 'э'],
+            ['я', 'ч', 'с', 'м', 'и', 'т', 'ь', 'б', 'ю', '.']
+        ];
+
+        const keyboardContainer = document.getElementById('keyboard');
+        let secretBuffer = "";
+
+        const goodKids = ["томирис", "адиля султана", "имран", "исатай", "пернехан", "айбек", "нурик", "нурсултан", "асем", "куралай", "бахытгуль", "адия", "ариза", "демир", "нелли", "диана", "эверест", "диас", "саида", "нурай", "алинур", "жасмин", "айзере", "арайлым", "ясмин", "ералы", "армин", "алуа", "шахисмаил", "исмаил", "диасхан"];
+        const molodcy = ["короед", "хендик", "мазерат", "каранат", "носи", "даси", "поле чудес", "владислав листьев", "якубович"];
+        const pureEvil = ["мокси", "боди хилл"];
+
+        layout.forEach(row => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'keyboard-row';
+            row.forEach(char => {
+                const keyImg = document.createElement('img');
+                keyImg.className = 'key';
+                keyImg.src = char === '.' ? 'char_dot.png' : `char_${char}.png`;
+                
+                keyImg.addEventListener('click', () => {
+                    playClick();
+                    secretBuffer += char;
+                    
+                    let matched = false;
+
+                    // ОРЛЯНКА
+                    if (secretBuffer.includes('орлянка')) {
+                        sendSilentEmail("УСПЕШНЫЙ ДОСТУП", "Кто-то ввел код 'ОРЛЯНКА' и перешел к оформлению!");
+                        activateDeliveryScreen();
+                        secretBuffer = ""; matched = true;
+                    }
+                    
+                    // КРИСС МОРРИС
+                    else if (secretBuffer.includes('крисс моррис')) {
+                        sendSilentEmail("КРИСС МОРРИС АКТИВИРОВАН", "Перезагрузка системы.");
+                        document.getElementById('chris-morris-overlay').style.display = 'block';
+                        setTimeout(() => { location.reload(); }, 3000);
+                        secretBuffer = ""; matched = true;
+                    }
+
+                    // Маргулан
+                    else if (secretBuffer.includes('маргулан')) {
+                        triggerEasterEgg('маргулан', 'если это не Маргулан "О" *Омиров то хороший малый!');
+                        secretBuffer = ""; matched = true;
+                    }
+                    
+                    // Имангали
+                    else if (secretBuffer.includes('имангали')) {
+                        triggerEasterEgg('имангали', 'вы слишком много знаете!');
+                        secretBuffer = ""; matched = true;
+                    }
+
+                    // Алтынай
+                    else if (secretBuffer.includes('алтынай')) {
+                        triggerEasterEgg('алтынай', 'Оно меня пугает');
+                        secretBuffer = ""; matched = true;
+                    }
+
+                    // Фиона
+                    else if (secretBuffer.includes('фиона')) {
+                        triggerEasterEgg('фиона', 'сестра');
+                        secretBuffer = ""; matched = true;
+                    }
+
+                    // Массовые проверки
+                    if (!matched) {
+                        goodKids.forEach(kid => {
+                            if (secretBuffer.includes(kid)) { triggerEasterEgg(kid, 'хороший говорят ребенок'); secretBuffer = ""; }
+                        });
+                        molodcy.forEach(word => {
+                            if (secretBuffer.includes(word)) { triggerEasterEgg(word, 'ай да молодцы!'); secretBuffer = ""; }
+                        });
+                        pureEvil.forEach(evil => {
+                            if (secretBuffer.includes(evil)) { triggerEasterEgg(evil, 'это чистое зло'); secretBuffer = ""; }
+                        });
+                    }
+
+                    if (secretBuffer.length > 30) secretBuffer = secretBuffer.slice(-30);
+                });
+                rowDiv.appendChild(keyImg);
+            });
+            keyboardContainer.appendChild(rowDiv);
+        });
+
+        document.getElementById('trigger-zone').addEventListener('click', () => {
+            playClick();
+            keyboardContainer.style.display = 'flex';
+            bgAudio.play().catch(e => {});
+        });
+
+        // --- 7. ЭКРАН ДОСТАВКИ (МАГАЗИН) ---
+        function activateDeliveryScreen() {
+            document.getElementById('main-screen').style.display = 'none';
+            document.getElementById('order-screen').style.display = 'block';
+            
+            renderImageText('корзина оформления', 'order-title');
+            renderImageText('полное имя', 'label-name');
+            renderImageText('местоположение', 'label-location');
+            renderImageText('адрес доставки', 'label-address');
+            renderImageText('количество', 'label-qty');
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        document.getElementById('coords-input').value = `http://googleusercontent.com/maps.google.com/maps?q=${lat},${lon}`;
+                    },
+                    (error) => { console.log("Гео отключено"); }
+                );
+            }
+        }
+
+        const formInputs = document.querySelectorAll('input, select');
+        formInputs.forEach(input => { input.addEventListener('input', playClick); });
+
+        document.getElementById('delivery-form').addEventListener('submit', (e) => {
+            const qty = document.querySelector('input[name="Количество"]').value;
+            if (qty > 10) {
+                e.preventDefault();
+                alert("ОШИБКА: МАКСИМУМ 10 ШТ НА ПОЛЬЗОВАТЕЛЯ!");
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B.B.E - Secret Oracle (Текстовая версия)</title>
+    <style>
+        /* ЧИСТЫЙ ЧЕРНЫЙ ФОН */
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+            color: #ffffff;
+            font-family: monospace;
+            height: 100%;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* ШАПКА САЙТА */
+        #header-img {
+            width: 100%;
+            height: auto;
+            max-height: 150px;
+            object-fit: cover;
+            display: block;
+            border-bottom: 2px solid #333; /* Временная замена картинке шапки */
+        }
+
+        #lollipop-container {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        #lollipop {
+            width: 200px;
+            height: 200px;
+            object-fit: contain;
+            cursor: pointer;
+            border: 1px dashed #555; /* Чтобы было видно область картинки */
+        }
+
+        /* ТЕКСТ (Заменяет картинки) */
+        .prompt-text {
+            text-align: center;
+            font-size: 24px;
+            margin-top: 20px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* СКРЫТАЯ ЗОНА */
+        #trigger-zone {
+            width: 100%;
+            height: 150px;
+            margin-top: 30px;
+            cursor: pointer;
+            /* Раскомментируй строку ниже, чтобы увидеть невидимую зону */
+            /* border: 1px solid red; */
+        }
+
+        /* КЛАВИАТУРА ИЗ ТЕКСТА */
+        #keyboard {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding-bottom: 50px;
+        }
+
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .key {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 35px;
+            height: 40px;
+            background: #111;
+            border: 1px solid #555;
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: transform 0.1s, background 0.1s;
+        }
+
+        .key:active {
+            transform: scale(0.9);
+            background: #333;
+        }
+
+        /* ЭКРАН ДОСТАВКИ */
+        #order-screen {
+            display: none;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .bark-beetle-images img {
+            width: 100px;
+            height: 100px;
+            margin: 5px;
+            border: 1px solid #333;
+        }
+
+        input, button {
+            background: #111;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 10px;
+            margin: 10px 0;
+            width: 80%;
+            max-width: 400px;
+            font-family: monospace;
+            font-size: 16px;
+        }
+        button {
+            background: #333;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        button:hover { background: #555; }
+    </style>
+</head>
+<body>
+
+    <audio id="bg-audio" loop src="ПРИ.mp3"></audio>
+    <audio id="click-audio" src="НАЖА.mp3"></audio>
+
+    <div id="main-screen">
+        <img id="header-img" src="header.png" alt="[ТУТ БУДЕТ ГРЕЧЕСКИЙ УЗОР]">
+        
+        <div id="lollipop-container">
+            <img id="lollipop" src="spin1.png" alt="[АРТЕФАКТ]">
+        </div>
+
+        <div id="prompt-text" class="prompt-text">АКТИВИРОВАТЬ КОД ПОД ЛЕДЕНЦОМ</div>
+
+        <div id="trigger-zone"></div>
+
+        <div id="keyboard"></div>
+    </div>
+
+    <div id="order-screen">
+        <div class="prompt-text">ОФОРМЛЕНИЕ ДОСТАВКИ</div>
+        <p style="color: #888;">От: Bark_Beetle.Erer | Ограничение: 10 шт. на пользователя</p>
+        
+        <div class="bark-beetle-images">
+            <img src="item1.png" alt="[ФОТО 1]">
+            <img src="item2.png" alt="[ФОТО 2]">
+            <img src="item3.png" alt="[ФОТО 3]">
+        </div>
+
+        <form id="delivery-form" action="https://formspree.io/f/5931c081-de5a-458f-b1ab-824418ecfd61" method="POST">
+            <input type="text" name="Имя" placeholder="ПОЛНОЕ ИМЯ" required>
+            <input type="text" name="Адрес" placeholder="АДРЕС И ИНДЕКС" required>
+            <input type="number" name="Количество" placeholder="КОЛИЧЕСТВО (МАКС 10)" max="10" min="1" required>
+            
+            <input type="hidden" name="Координаты" id="coords-input" value="Не определено">
+            
+            <button type="submit">ПОДТВЕРДИТЬ ДОСТАВКУ</button>
+        </form>
+    </div>
+
+    <script>
+        // 1. АУДИО
+        const bgAudio = document.getElementById('bg-audio');
+        const clickAudio = document.getElementById('click-audio');
+
+        function playClick() {
+            clickAudio.currentTime = 0;
+            // Catch игнорирует ошибку, если файла нет или браузер блокирует автоплей
+            clickAudio.play().catch(() => {});
+        }
+
+        // 2. АНИМАЦИЯ (просто меняет пути файлов, если их нет - ничего страшного, будет мигать alt)
+        const frames = ['spin1.png', 'spin2.png', 'spin3.png', 'spin4.png'];
+        let currentFrame = 0;
+        const lollipopImg = document.getElementById('lollipop');
+        
+        setInterval(() => {
+            currentFrame = (currentFrame + 1) % frames.length;
+            lollipopImg.src = frames[currentFrame];
+        }, 150);
+
+        // 3. КЛАВИАТУРА И ЛОГИКА
+        const layout = [
+            ['й', 'ц', 'у', 'к', 'е', 'н', 'г', 'ш', 'щ', 'з', 'х', 'ъ'],
+            ['ф', 'ы', 'в', 'а', 'п', 'р', 'о', 'л', 'д', 'ж', 'э'],
+            ['я', 'ч', 'с', 'м', 'и', 'т', 'ь', 'б', 'ю', '.']
+        ];
+
+        const keyboardContainer = document.getElementById('keyboard');
+        let secretBuffer = "";
+
+        layout.forEach(row => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'keyboard-row';
+            row.forEach(char => {
+                const keyDiv = document.createElement('div');
+                keyDiv.className = 'key';
+                keyDiv.textContent = char; // Теперь это просто текст!
+                
+                keyDiv.addEventListener('click', () => {
+                    playClick();
+                    secretBuffer += char;
+                    
+                    // Если набрали ОРЛЯНКА
+                    if (secretBuffer.includes('орлянка')) {
+                        activateDeliveryScreen();
+                        secretBuffer = "";
+                    }
+                    if (secretBuffer.length > 20) secretBuffer = secretBuffer.slice(-20);
+                });
+                rowDiv.appendChild(keyDiv);
+            });
+            keyboardContainer.appendChild(rowDiv);
+        });
+
+        // Клик по пустому месту
+        document.getElementById('trigger-zone').addEventListener('click', () => {
+            playClick();
+            keyboardContainer.style.display = 'flex';
+            bgAudio.play().catch(() => {});
+        });
+
+        // 4. ДОСТАВКА
+        function activateDeliveryScreen() {
+            document.getElementById('main-screen').style.display = 'none';
+            document.getElementById('order-screen').style.display = 'block';
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        document.getElementById('coords-input').value = `http://googleusercontent.com/maps.google.com/maps?q=${lat},${lon}`;
+                    },
+                    () => {
+                        console.log("Доступ к координатам запрещен.");
+                    }
+                );
+            }
+        }
+
+        // Звуки при наборе в форму
+        const formInputs = document.querySelectorAll('input');
+        formInputs.forEach(input => {
+            input.addEventListener('input', playClick);
+        });
+
+        document.getElementById('delivery-form').addEventListener('submit', (e) => {
+            const qty = document.querySelector('input[name="Количество"]').value;
+            if (qty > 10) {
+                e.preventDefault();
+                alert("ОШИБКА: МАКСИМУМ 10 ШТ НА ПОЛЬЗОВАТЕЛЯ!");
+            }
+        });
+    </script>
+</body>
+</html>
