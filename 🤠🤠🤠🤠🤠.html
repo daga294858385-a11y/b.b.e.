@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>B.B.E - Secret Oracle</title>
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            user-select: none;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            background-color: #000000; color: #ffffff;
+            font-family: monospace; height: 100%;
+            overflow-x: hidden;
+        }
+
+        #header-img { width: 100%; height: auto; max-height: 150px; object-fit: cover; display: block; }
+        
+        #header-lollipops {
+            display: none; width: 100%; height: 80px;
+            overflow: hidden; white-space: nowrap;
+            justify-content: center; gap: 8px;
+            background: #000; padding: 10px 0;
+        }
+        .header-lolli { width: 60px; height: 60px; object-fit: contain; display: inline-block; }
+
+        #lollipop-container { text-align: center; margin-top: 40px; min-height: 220px; }
+        #lollipop { width: 200px; height: 200px; object-fit: contain; cursor: pointer; }
+
+        .image-text { display: flex; justify-content: center; flex-wrap: wrap; margin-top: 20px; gap: 2px; }
+        .image-text img { height: 28px; width: auto; pointer-events: none; }
+        
+        #bbe-text { margin-top: 10px; }
+        #bbe-text img { height: 40px; } 
+
+        #trigger-zone { width: 100%; height: 100px; cursor: pointer; margin-top: 20px; }
+
+        #keyboard {
+            display: none; flex-direction: column; align-items: center; gap: 8px;
+            margin: 20px auto; padding-bottom: 50px; width: 100%; max-width: 600px;
+        }
+        .keyboard-row { display: flex; justify-content: center; gap: 1vw; width: 100%; }
+        .key { cursor: pointer; height: clamp(25px, 8vw, 40px); transition: transform 0.1s; }
+        .key:active { transform: scale(0.9); }
+
+        #order-screen { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
+
+        .bark-beetle-images {
+            position: relative;
+            width: 210px;
+            height: 210px;
+            margin: 0 auto 30px auto;
+        }
+        .bark-beetle-images img {
+            width: 90px;
+            height: 90px;
+            border: none;
+            object-fit: contain;
+            position: absolute;
+            animation: squarePath 4s linear infinite;
+        }
+
+        @keyframes squarePath {
+            0% { top: 0; left: 0; }
+            25% { top: 0; left: 120px; }
+            50% { top: 120px; left: 120px; }
+            75% { top: 120px; left: 0; }
+            100% { top: 0; left: 0; }
+        }
+
+        .bark-beetle-images img:nth-child(1) { animation-delay: 0s; }
+        .bark-beetle-images img:nth-child(2) { animation-delay: -1s; }
+        .bark-beetle-images img:nth-child(3) { animation-delay: -2s; }
+        .bark-beetle-images img:nth-child(4) { animation-delay: -3s; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group .image-text { justify-content: flex-start; margin-bottom: 8px; }
+        .form-group .image-text img { height: 20px; }
+
+        input, select {
+            background: #000; color: #fff; border: 1px solid #333;
+            padding: 12px; width: 100%; box-sizing: border-box; font-size: 16px; border-radius: 0;
+        }
+
+        .checkout-btn {
+            cursor: pointer; margin-top: 30px; border: 1px solid #444;
+            padding: 15px; text-align: center; background: #0a0a0a;
+        }
+
+        #custom-popup {
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); background: rgba(0,0,0,0.98);
+            border: 1px solid #444; padding: 40px 20px; z-index: 10001;
+            width: 85%; max-width: 450px; text-align: center;
+        }
+
+        .overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; background: #000; z-index: 10000;
+        }
+        .overlay img { width: 100%; height: 100%; object-fit: contain; }
+    </style>
+</head>
+<body>
+
+    <audio id="bg-audio" loop src="ПРИ.mp3"></audio>
+    <audio id="click-audio" src="НАЖА.mp3"></audio>
+
+    <div id="chris-morris-overlay" class="overlay"><img src="продит.png"></div>
+
+    <div id="custom-popup">
+        <div id="popup-content" class="image-text"></div>
+        <div style="margin-top: 40px; cursor: pointer;" onclick="closePopup()">
+            <div id="ok-label" class="image-text"></div>
+        </div>
+    </div>
+
+    <div id="main-screen">
+        <img id="header-img" src="header.png">
+        <div id="lollipop-container">
+            <img id="lollipop" src="spin1.png">
+        </div>
+        <div id="prompt-text" class="image-text"></div>
+        <div id="bbe-text" class="image-text"></div>
+        <div id="trigger-zone"></div>
+        <div id="keyboard"></div>
+    </div>
+
+    <div id="order-screen">
+        <div id="header-lollipops"></div>
+        <div id="order-title" class="image-text" style="margin-top: 30px;"></div>
+        
+        <div class="bark-beetle-images">
+            <img src="item1.png"><img src="item2.png"><img src="item3.png"><img src="item4.png">
+        </div>
+
+        <form action="https://api.web3forms.com/submit" method="POST" id="delivery-form">
+            <input type="hidden" name="access_key" value="5931c081-de5a-458f-b1ab-824418ecfd61">
+            <input type="hidden" name="subject" value="НОВЫЙ ЗАКАЗ: ОРЛЯНКА">
+            
+            <div class="form-group">
+                <div id="lbl-name" class="image-text"></div>
+                <input type="text" name="Имя_Клиента" required>
+            </div>
+            <div class="form-group">
+                <div id="lbl-loc" class="image-text"></div>
+                <select name="Локация" required>
+                    <option value="Шымкент">Шымкент</option>
+                    <option value="Степь">Степь</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <div id="lbl-addr" class="image-text"></div>
+                <input type="text" name="Адрес" required>
+            </div>
+            <div class="form-group">
+                <div id="lbl-qty" class="image-text"></div>
+                <input type="number" name="Кол_во" max="10" min="1" value="1">
+            </div>
+            
+            <input type="hidden" name="GPS" id="coords-input">
+            
+            <div class="checkout-btn" onclick="document.getElementById('delivery-form').submit()">
+                <div id="btn-order-text" class="image-text"></div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const bgAudio = document.getElementById('bg-audio');
+        const clickAudio = document.getElementById('click-audio');
+        const lollipop = document.getElementById('lollipop');
+        
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioCtx.createMediaElementSource(clickAudio);
+        const gainNode = audioCtx.createGain();
+        source.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        function startBackgroundMusic() {
+            if (bgAudio.paused) {
+                bgAudio.volume = 0.6;
+                bgAudio.play().catch(()=>{});
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        document.addEventListener('click', startBackgroundMusic, { once: false });
+
+        function playSound(isBoosted = false) {
+            startBackgroundMusic();
+            gainNode.gain.value = isBoosted ? 15.0 : 1.0; 
+            clickAudio.currentTime = 0;
+            clickAudio.play().catch(()=>{});
+        }
+
+        function drawPNG(text, containerId) {
+            const container = document.getElementById(containerId);
+            if(!container) return;
+            container.innerHTML = '';
+            text.toLowerCase().split('').forEach(char => {
+                const img = document.createElement('img');
+                img.src = char === ' ' ? 'char_space.png' : (char === '.' ? 'char_dot.png' : `char_${char}.png`);
+                container.appendChild(img);
+            });
+        }
+
+        function showMessage(text) {
+            drawPNG(text, 'popup-content');
+            drawPNG('ок', 'ok-label');
+            document.getElementById('custom-popup').style.display = 'block';
+        }
+
+        function closePopup() { document.getElementById('custom-popup').style.display = 'none'; }
+
+        let briitActive = false;
+        let mainFrame = 1;
+        let hFrame1 = 1; 
+        let tickCounter = 0;
+        let animationId = null;
+
+        // ТОЛЬКО ОДИН ДВИГАТЕЛЬ АНИМАЦИИ
+        function spin() {
+            if(!briitActive) {
+                mainFrame = (mainFrame % 4) + 1;
+                lollipop.src = `spin${mainFrame}.png`;
+            }
+
+            tickCounter++;
+            if(tickCounter % 2 === 0) {
+                hFrame1 = (hFrame1 % 4) + 1;
+                let hFrame2 = (hFrame1 - 1 < 1) ? 4 : hFrame1 - 1;
+                const headerLollis = document.querySelectorAll('.header-lolli');
+                headerLollis.forEach((el, idx) => {
+                    el.src = ((idx + 1) % 2 === 0) ? `spin${hFrame1}.png` : `spin${hFrame2}.png`;
+                });
+            }
+        }
+
+        // Запускаем цикл один раз
+        let mainInterval = setInterval(spin, 150);
+
+        function triggerBriit() {
+            briitActive = true;
+            lollipop.src = 'БРИИТ.png';
+            playSound(true);
+            setTimeout(() => { briitActive = false; }, 10000);
+        }
+
+        lollipop.onclick = () => {
+            if(briitActive) { playSound(true); return; }
+            playSound();
+            if (Math.floor(Math.random() * 1000) === 1) triggerBriit();
+        };
+
+        let buffer = "";
+        const kids = ["томирис","адиля","султан","имран","исатай","пернехан","айбек","нурик","нурсултан","асем","куралай","бахытгуль","адия","ариза","демир","нелли","диана","эверест","диас","саида","нурай","алинур","жасмин","айзере","арайлым","ясмин","ералы","армин","алуа","шахисмаил","исмаил","диасхан"];
+        const cool = ["короед","хендик","мазерат","каранат","носи","даси","поле чудес","владислав листьев","якубович"];
+
+        function checkInput() {
+            const val = buffer.toLowerCase();
+            if (val.includes("крисс моррис")) {
+                document.getElementById('chris-morris-overlay').style.display = 'block';
+                setTimeout(() => location.reload(), 3000);
+            }
+            if (val.includes("огурец")) { triggerBriit(); buffer = ""; }
+            if (val.includes("орлянка")) { openStore(); buffer = ""; }
+            if (val.includes("маргулан")) { showMessage("если это не маргулан омиров то хороший малый"); buffer = ""; }
+            if (val.includes("имангали")) { showMessage("вы слишком много знаете"); buffer = ""; }
+            if (val.includes("алтынай")) { showMessage("оно меня пугает"); buffer = ""; }
+            if (val.includes("фиона")) { showMessage("сестра"); buffer = ""; }
+            if (val.includes("мокси") || val.includes("боди хилл")) { showMessage("это чистое зло"); buffer = ""; }
+            
+            kids.forEach(k => { if(val.includes(k)) { showMessage("хороший говорят ребенок"); buffer=""; } });
+            cool.forEach(c => { if(val.includes(c)) { showMessage("ай да молодцы"); buffer=""; } });
+            if (buffer.length > 50) buffer = buffer.slice(-50);
+        }
+
+        const layout = [
+            ['й','ц','у','к','е','н','г','ш','щ','з','х','ъ'],
+            ['ф','ы','в','а','п','р','о','л','д','ж','э'],
+            ['я','ч','с','м','и','т','ь','б','ю','.']
+        ];
+        layout.forEach(row => {
+            const rDiv = document.createElement('div');
+            rDiv.className = 'keyboard-row';
+            row.forEach(char => {
+                const img = document.createElement('img');
+                img.className = 'key';
+                img.src = char === '.' ? 'char_dot.png' : `char_${char}.png`;
+                img.onclick = () => { playSound(); buffer += char; checkInput(); };
+                rDiv.appendChild(img);
+            });
+            document.getElementById('keyboard').appendChild(rDiv);
+        });
+
+        document.getElementById('trigger-zone').onclick = () => {
+            playSound();
+            document.getElementById('keyboard').style.display = 'flex';
+        };
+
+        function openStore() {
+            document.getElementById('main-screen').style.display = 'none';
+            document.getElementById('order-screen').style.display = 'block';
+            
+            const header = document.getElementById('header-lollipops');
+            header.style.display = 'flex';
+            header.innerHTML = '';
+            for(let i=0; i<12; i++) {
+                const img = document.createElement('img');
+                img.className = 'header-lolli';
+                img.src = 'spin1.png';
+                header.appendChild(img);
+            }
+
+            drawPNG('корзина заказов', 'order-title');
+            drawPNG('ваше имя', 'lbl-name');
+            drawPNG('локация', 'lbl-loc');
+            drawPNG('адрес доставки', 'lbl-addr');
+            drawPNG('количество', 'lbl-qty');
+            drawPNG('заказать', 'btn-order-text');
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    document.getElementById('coords-input').value = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                });
+            }
+        }
+
+        drawPNG('активировать код под леденцом', 'prompt-text');
+        drawPNG('в.в.е', 'bbe-text'); 
+
+        // ИСПРАВЛЕНИЕ: Перезапускаем анимацию правильно при возврате
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) {
+                // Чистим старый таймер перед созданием нового, чтобы не было "2 кадров"
+                clearInterval(mainInterval);
+                mainInterval = setInterval(spin, 150);
+            }
+        });
+    </script>
+</body>
+</html>
